@@ -1,0 +1,165 @@
+--Problem Statement 1:
+
+--1. Read the text file, and create a tupled rdd.
+
+--(name, subject, grade, marks)
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val tupleRDD = input.map(x =>{
+ val sv = x.split(",")
+ val name = sv(0)
+ val subject = sv(1)
+ val grade = sv(2)
+ val marks1 = sv(3).toInt
+ val marks2 = sv(4).toInt
+ val tuple = (name,subject,grade,marks1,marks2)
+tuple})
+
+tupleRDD.foreach(println)
+
+--2. Find the count of total number of rows present.
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val count_rows = input.count()
+
+println(count_rows)
+
+--3. What is the distinct number of subjects present in the entire school
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val d_s_RDD = input.map(x =>{
+ val sv = x.split(",")
+ val sub = sv(1)
+ sub
+}) 
+
+val count_distint_sub = d_s_RDD.distinct().count()
+
+--4. What is the count of the number of students in the school, whose name is Mathew and marks is 55
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val transRDD = input.map(x => x.split(","))
+ 
+val filRDD = transRDD.filter(x=>((x(0).toLowerCase == "mathew")&&(x(3).toInt == 55)))
+
+println(filRDD.count)
+
+---------------------------------------------------------------------------------------------------------------------------
+
+--Problem Statement 2:
+
+--1. What is the count of students per grade in the school?
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val stuRDD = input.map(x => {
+ val sv = x.split(",")
+ val grade = sv(2)
+ (grade)
+})
+
+val finalGradeRDD = stuRDD.map(x=>(x,1))
+
+val result = finalGradeRDD.reduceByKey(_ + _)
+result.collect()
+
+--2. Find the average of each student (Note - Mathew is grade-1, is different from Mathew in some other grade!)
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val stuRDD = input.map(x => {
+ val sv = x.split(",")
+ val name = sv(0)
+ val grade = sv(2)
+ val marks = sv(3).toInt
+
+ ((name,grade),marks)
+
+})
+
+val countRDD = stuRDD.map(x =>((x._1),1)).reduceByKey(_+_).sortByKey()
+val totMarksRDD = stuRDD.reduceByKey(_+_).sortByKey()
+val totJoinCount = totMarksRDD.join(countRDD)
+val result = totJoinCount.map(x => ( ( x._1.toString)+" ===> "+(x._2._1.toInt)/(x._2._2.toInt))).foreach(println)
+
+
+--3. What is the average score of students in each subject across all grades?
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val marRDD = input.map(x=>{
+ val sv = x.split(",")
+ val subject = sv(1)
+ val marks = sv(3).toInt
+ 
+ (subject,marks) 
+
+})
+
+val countRDD = marRDD.map(x => ((x._1),1)).reduceByKey(_+_).sortByKey()
+val marksSubRDD = marRDD.reduceByKey(_+_).sortByKey()
+val finJoin = marksSubRDD.join(countRDD)
+val result = finJoin.map(x => ( ( x._1.toString)+" ===> "+(x._2._1.toInt)/(x._2._2.toInt))).foreach(println)
+
+
+--4 What is the average score of students in each subject per grade?
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val transRDD = input.map(x=>{
+ val sv = x.split(",")
+ val grade = sv(2)
+ val subject = sv(1)
+ val marks = sv(3).toInt
+ 
+ ((grade,subject),marks)
+ 
+})
+
+val countRDD = transRDD.map(x => (x._1,1)).reduceByKey(_+_).sortByKey()
+val totMarksRDD = transRDD.reduceByKey(_+_).sortByKey()
+val joinMarks = totMarksRDD.join(countRDD)
+val result = joinMarks.map(x => ( ( x._1.toString)+" ===> "+(x._2._1.toInt)/(x._2._2.toInt))).foreach(println)
+
+
+--5. For all students in grade-2, how many have average score greater than 50?
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val newRDD = input.map(x=>{
+ val sv = x.split(",")
+ val grade = sv(2)
+ val marks = sv(3).toInt
+ val name = sv(0)
+ 
+ ((name,grade),marks)
+ 
+})
+
+val filterRDD = newRDD.filter(x => (x._1._2 =="grade-2"))
+val countRDD = filterRDD.map(x => (x._1,1)).reduceByKey(_+_)sortByKey()
+val totMarks = filterRDD.reduceByKey(_+_).sortByKey()
+val finalJoin = totMarks.join(countRDD)
+val avg = finalJoin.map(x => ((x._2._1.toInt)/(x._2._2.toInt)))
+val finalFiltercount = avg.filter(x => x > 50).count
+println("Total Count"+count)
+
+--3.Problem Statement  Are there any students in the college that satisfy the below criteria :
+
+--1. Average score per student_name across all grades is same as average score per student_name per grade
+
+
+val input = sc.textFile("file:///home/cloudera/Desktop/Acadgild/Assignment_17_2/17.2_Dataset.txt")
+
+val rdd = input.map(x => {
+val row = x.split(",").toList
+(row.apply(0), row.apply(1), row.apply(2), row.apply(3).toInt, row.apply(4).toInt)
+})
+
+val AS31 = rdd.map(x=> (x._1,(x._4+x._5))).groupByKey.map(x=>(x._1,(x._2.sum.toDouble/(x._2.size*2))))
+val AS32 = rdd.map(x=> ((x._1,x._3),(x._4 + x._5))).groupByKey.map(x => (x._1._1,(x._2.sum.toDouble/(x._2.size*2))))
+val AS33 = AS31.intersection(AS32).collect
